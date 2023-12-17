@@ -11,7 +11,7 @@
 # :notebook_with_decorative_cover: Table of Contents
 
 - [About the Project](#star2-about-the-project)
-<a href="url"><img src="https://github.com/OrGolan12/RISC-V-Project-OB/blob/main/RISCOB_diagram.jpg" align="right" height="400" width="600" ></a>
+<a href="url"><img src="https://github.com/OrGolan12/RISC-V-Project-OB/blob/main/documents/RISCOB_diagram.jpg" align="right" height="400" width="600" ></a>
 - [Roadmap](#compass-roadmap)
 - [FAQ](#grey_question-faq)
 - [Contact](#handshake-contact)
