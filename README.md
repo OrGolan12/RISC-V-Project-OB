@@ -11,7 +11,7 @@
 # :notebook_with_decorative_cover: Table of Contents
 
 - [About the Project](#star2-about-the-project)
-<a href="url"><img src="https://github.com/ronen-golan/git_test/assets/68474751/0b58eeac-589d-4c82-b411-7fd20d111bc1" align="right" height="400" width="600" ></a>
+<a href="url"><img src="https://github.com/OrGolan12/RISCV_OB/assets/68474751/0b58eeac-589d-4c82-b411-7fd20d111bc1" align="right" height="400" width="600" ></a>
 - [Roadmap](#compass-roadmap)
 - [FAQ](#grey_question-faq)
 - [Contact](#handshake-contact)
