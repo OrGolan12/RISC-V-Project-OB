@@ -1,6 +1,6 @@
 <div align='center'>
 
-<h1>RISC-V Verilog model (Or Golan & Bar Pascaro) </h1>
+<h1>RISC-V Verilog model (Or Golan & Bar Pascaru) </h1>
 <p>RISC-V verilog implementation , Base RV ISA , 4xStages pipeline , Single-Issue </p>
 
 <h4> <span> · </span> <a href="https://github.com/OrGolan12/RISC-V-Project-OB/blob/master/README.md"> Documentation </a> <span> · </span> <a href="https://github.com/OrGolan12/RISC-V-Project-OB/issues"> Report Bug </a> <span> · </span> <a href=""https://github.com/OrGolan12/RISC-V-Project-OB/issues"> Request Feature </a> </h4>
