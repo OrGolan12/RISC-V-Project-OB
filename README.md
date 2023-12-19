@@ -1,9 +1,9 @@
 <div align='center'>
 
-<h1>RISC-V Verilog model (Or Golan & Bar Pascaro) </h1>
+<h1>RISC-V Verilog model (Or Golan & Bar Pascaru) </h1>
 <p>RISC-V verilog implementation , Base RV ISA , 4xStages pipeline , Single-Issue </p>
 
-<h4> <span> · </span> <a href="https://github.com/OrGolan12/RISCV_OB /blob/master/README.md"> Documentation </a> <span> · </span> <a href="https://github.com/OrGolan12/RISCV_OB /issues"> Report Bug </a> <span> · </span> <a href="https://github.com/OrGolan12/RISCV_OB /issues"> Request Feature </a> </h4>
+<h4> <span> · </span> <a href="https://github.com/OrGolan12/RISC-V-Project-OB/blob/master/README.md"> Documentation </a> <span> · </span> <a href="https://github.com/OrGolan12/RISC-V-Project-OB/issues"> Report Bug </a> <span> · </span> <a href=""https://github.com/OrGolan12/RISC-V-Project-OB/issues"> Request Feature </a> </h4>
 
 </div>
 
@@ -11,7 +11,7 @@
 # :notebook_with_decorative_cover: Table of Contents
 
 - [About the Project](#star2-about-the-project)
-<a href="url"><img src="https://github.com/OrGolan12/RISCV_OB/assets/68474751/0b58eeac-589d-4c82-b411-7fd20d111bc1" align="right" height="400" width="600" ></a>
+<a href="url"><img src="https://github.com/OrGolan12/RISC-V-Project-OB/blob/main/documents/RISCOB_diagram.jpg" align="right" height="400" width="600" ></a>
 - [Roadmap](#compass-roadmap)
 - [FAQ](#grey_question-faq)
 - [Contact](#handshake-contact)
@@ -36,17 +36,17 @@
 ### :test_tube: Running Tests
 Compile riscv verilog model
 ```bash
-iverilog -o riscv_cpu_tb .\riscv_cpu_tb.v
+iverilog -o cpu_tb .\cpu_tb.v
 ```
 
 Create simulation
 ```bash
-VVP .\riscv_cpu_tb
+VVP .\cpu_tb
 ```
 
 Run simulation
 ```bash
-gtkwave.exe .\riscv_cpu_tb.vcd
+gtkwave.exe .\cpu_tb.vcd
 ```
 
 
@@ -67,7 +67,7 @@ Or Golan
 - Mail    :  golanorwd@gmail.com
 
 Project Link
-[https://github.com/OrGolan12/RISCV_OB](https://github.com/OrGolan12/RISCV_OB)
+[https://github.com/OrGolan12/RISCV_OB](https://github.com/OrGolan12/RISC-V-Project-OB/)
 
 ## :gem: Acknowledgements
 - [RISC-V website (Documentation)](https://riscv.org/)
