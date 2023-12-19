@@ -7,7 +7,7 @@
 // Description: RISC-V REGFILE  
 // 
 // Revision: 
-//  
+// 1.01 : expose reg_mem to the gtkwave
 //
 //////////////////////////////////////////////////////////////////////////////////
 
@@ -50,5 +50,14 @@ always@ (posedge clk)
 
 assign rs1_data = reg_mem[rs1_address];
 assign rs2_data = reg_mem[rs2_address];
+
+// Only for simulation expose the registers
+generate
+  genvar idx;
+  for(idx = 0; idx < 32; idx = idx+1) begin: register
+    wire [31:0] tmp;
+    assign tmp = reg_mem[idx];
+  end
+endgenerate
 
 endmodule
