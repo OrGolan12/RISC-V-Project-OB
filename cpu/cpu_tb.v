@@ -3,7 +3,7 @@
 `include "decode.v"
 `include "regfile.v"
 `include "alu.v"
-//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
 // Company: 
 // Engineer: 
 // 
@@ -147,16 +147,16 @@ initial
         begin
 
           #10
-          if ((i>=10) && (i<=14))
+          if ((i>=10) && (i<=19))
             begin                                                    
               cpu_instruction = itype_cmd(ADD,12'h5,5'b00000,5'b00001); //add imm = 5 + reg0 to reg1  
             end
-          else if ((i>=15) && (i<=19))
+          else if ((i>=20) && (i<=30))
             begin 
               cpu_instruction = itype_cmd(ADD,12'h5,5'b00001,5'b00010); //add imm = 5 + reg1 to reg2
               //cpu_instruction = rtype_cmd(ADD,5'b00001,5'b00010,5'b00000);  //add reg1 + reg 2 => reg 0 
             end           
-          else if ((i>=20) && (i<=25))
+          else if ((i>=31) && (i<=40))
             begin                                                    
               cpu_instruction = rtype_cmd(ADD,5'b00000,5'b00010,5'b00011);  //add reg0 + reg 2 => reg 3 
             end           
@@ -166,7 +166,7 @@ initial
               cpu_instruction = 0 ; // [RG]: Add real instruction value 
             end                     
         cpu_clk = ~cpu_clk;        
-      end
+    end
       $dumpfile("cpu_tb.vcd");
       $dumpvars(0, cpu_tb);
       $display("riscv_cpu_tb: End");        
