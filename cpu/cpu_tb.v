@@ -3,6 +3,7 @@
 `include "decode.v"
 `include "regfile.v"
 `include "alu.v"
+`include "IFU.v"
 //////////////////////////////////////////////////////////////////////////////////////
 // Company: 
 // Engineer: 
@@ -127,13 +128,14 @@ function [31:0] rtype_cmd;
     end                                              
 endfunction
 
-initial 
+  initial 
     begin
+
         $dumpfile("cpu_tb.vcd");
         $dumpvars(0, cpu_tb);
-        //for (idx = 0; idx < 32; idx = idx + 1)
-        //  $dumpvars(0, regfile.reg_mem[idx]);
         $display("riscv_cpu_tb: Start");
+
+        //togggle reset
         cpu_clk = 0;
         cpu_rst = 1;
         cpu_instruction = 0;
@@ -143,34 +145,70 @@ initial
         #10 cpu_clk = 0;
         cpu_rst = 0;
 
-      for (i=0;i<100;i=i+1) 
+    end
+     //create clock for simulation
+    always #10 cpu_clk = ~cpu_clk;
+
+    initial begin
+        //OPCODE : ADD
+        cpu_instruction = itype_cmd(ADD,12'h5,5'b00000,5'b00001); //add (imm = 5 + reg0) to reg1. --> reg1 should be 5.
+        #100
+        cpu_instruction = itype_cmd(ADD,12'h5,5'b00001,5'b00010); //add (imm = 5) + reg1 to reg2 --> reg2 should be 10.
+        #100
+        cpu_instruction = rtype_cmd(ADD,5'b00001,5'b00010,5'b00011); //add reg1(10) + reg 2(5) --> reg 3 should be 15.
+        #100
+
+        //OPCODE : AND
+        cpu_instruction = rtype_cmd(AND,5'b00001,5'b00010,5'b00011);//bitwise and (reg2(10) & reg 2(15)) --> reg 3 should be 10.
+        #100
+
+        //TESTING THE REGISTERS  -----ADD FUNCTION-----   
+        if (DUT.r.reg_mem[0] != 32'b000) $error("Expected REG%02d to be %0d but got %08x", 0, 32'b101, DUT.r.reg_mem[1]);//CHECK IF REG1 == 5
+        if (DUT.r.reg_mem[1] != 32'b101) $error("Expected REG%02d to be %0d but got %08x", 1, 32'b101, DUT.r.reg_mem[1]);//CHECK IF REG1 == 5
+        if (DUT.r.reg_mem[2] != 32'b1010) $error("Expected REG%02d to be %0d but got %08x", 2, 32'b1010, DUT.r.reg_mem[1]);//CHECK IF REG2 == 10
+        if (DUT.r.reg_mem[3] != 32'b1111) $error("Expected REG%02d to be %0d but got %08x", 3, 32'b1111, DUT.r.reg_mem[1]);//CHECK IF REG3 == 15
+
+        //TESTING THE REGISTERS  -----AND FUNCTION-----  
+        if (DUT.r.reg_mem[4] != (DUT.r.reg_mem[2] & DUT.r.reg_mem[3])) $error("Expected REG%04d to be %0d but got %08x", 4, (DUT.r.reg_mem[2] & DUT.r.reg_mem[3]), DUT.r.reg_mem[4]);//CHECK IF REG4 == REG2 AND REG3
+        //can add more tests
+        $dumpfile("cpu_tb.vcd");
+        $dumpvars(0, cpu_tb);
+        $display("riscv_cpu_tb: End");     
+        $finish;  
+    end
+      /*for (i=0;i<100;i=i+1) 
         begin
 
           #10
           if ((i>=10) && (i<=19))
             begin                                                    
-              cpu_instruction = itype_cmd(ADD,12'h5,5'b00000,5'b00001); //add imm = 5 + reg0 to reg1  
+              cpu_instruction = itype_cmd(ADD,12'h5,5'b00000,5'b00001); //add (imm = 5 + reg0) to reg1.
+              
             end
+                      
           else if ((i>=20) && (i<=30))
             begin 
-              cpu_instruction = itype_cmd(ADD,12'h5,5'b00001,5'b00010); //add imm = 5 + reg1 to reg2
-              //cpu_instruction = rtype_cmd(ADD,5'b00001,5'b00010,5'b00000);  //add reg1 + reg 2 => reg 0 
+              cpu_instruction = itype_cmd(ADD,12'h5,5'b00001,5'b00010); //add (imm = 5) + reg1 to reg2 --> reg2 should be 10.
+
             end           
           else if ((i>=31) && (i<=40))
             begin                                                    
-              cpu_instruction = rtype_cmd(ADD,5'b00000,5'b00010,5'b00011);  //add reg0 + reg 2 => reg 3 
+              cpu_instruction = rtype_cmd(ADD,5'b00001,5'b00010,5'b00011);  //add reg1(10) + reg 2(5) --> reg 3 should be 15.
             end           
           else   
             begin
               cpu_instruction_RDY_BSY = 0;                 
               cpu_instruction = 0 ; // [RG]: Add real instruction value 
             end                     
-        cpu_clk = ~cpu_clk;        
-    end
-      $dumpfile("cpu_tb.vcd");
-      $dumpvars(0, cpu_tb);
-      $display("riscv_cpu_tb: End");        
-    end
-   
+        cpu_clk = ~cpu_clk;        */
+
+
+       
     
+
+      //TESTING THE REGISTERS  -----ADD FUNCTION-----   
+      //if (DUT.r.reg_mem[0] != 32'b000) $error("Expected REG%02d to be %0d but got %08x", 0, 32'b101, DUT.r.reg_mem[1]);//CHECK IF REG1 == 5
+      //if (DUT.r.reg_mem[1] != 32'b101) $error("Expected REG%02d to be %0d but got %08x", 1, 32'b101, DUT.r.reg_mem[1]);//CHECK IF REG1 == 5
+      //if (DUT.r.reg_mem[2] != 32'b1010) $error("Expected REG%02d to be %0d but got %08x", 2, 32'b1010, DUT.r.reg_mem[1]);//CHECK IF REG2 == 10
+      //if (DUT.r.reg_mem[3] != 32'b1111) $error("Expected REG%02d to be %0d but got %08x", 3, 32'b1111, DUT.r.reg_mem[1]);//CHECK IF REG3 == 15
 endmodule

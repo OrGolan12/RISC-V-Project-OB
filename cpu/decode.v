@@ -84,8 +84,8 @@ begin
             begin 
               if (instruction_RDY_BSY) //posedge RDY_BSY//
                 state <= DECODE_STATE;
-                instruction = instruction_data;
-                instr_counter = instr_counter + 1 ;
+                instruction <= instruction_data;
+                instr_counter <= instr_counter + 1 ;
                 decoder_rdy_bsy  <= 0 ; 
                 RF_chip_enable <= 0; 
             end
