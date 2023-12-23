@@ -1,24 +1,24 @@
 `timescale 1ns / 1ps
 
 module PC(
-    input PC_rst,
-    input PC_clk,
-    input PC_jump_enb,
-    input [31:0] PC_jump_add,
-    output reg [31:0] PC_counter 
+    input pc_rst,
+    input pc_clk,
+    input pc_jump_enb,
+    input [31:0] pc_offset,
+    output reg [31:0] pc_counter 
     );
        
-always @(posedge PC_clk) 
+always @(posedge pc_clk) 
     begin
     
-        if (PC_rst)
-            PC_counter = 0; //counter reset
+        if (pc_rst)
+            pc_counter = 0; //counter reset
             
-        else if (PC_jump_enb)
-            PC_counter = PC_jump_add; //jump
+        else if (pc_jump_enb)
+            pc_counter = pc_counter + pc_offset ; //jump
             
-        else if (!PC_jump_enb)
-            PC_counter = PC_counter + 4;
+        else if (!pc_jump_enb)
+            pc_counter = pc_counter + 4;
                
     end
 

@@ -23,7 +23,10 @@ module decode (
     output reg [4:0]  RF_rs1_address,
     output reg [4:0]  RF_rs2_address,
     output reg [4:0]  RF_WR_add,
-    output reg [31:0] RF_WriteData 
+    output reg [31:0] RF_WriteData, 
+
+    output reg [31:0] pc_offset,
+    output reg pc_jump_enb
 );
 
 parameter IDLE_STATE                  = 3'b000;
@@ -35,6 +38,12 @@ reg [2:0] state ;
 
 parameter R_TYPE_OP = 7'b0110011;
 parameter I_TYPE_OP = 7'b0010011;
+parameter J_TYPE_OP = 7'b1101111;
+parameter JALR_TYPE_OP = 7'b1100111;
+parameter B_TYPE_OP = 7'b1100011;
+parameter S_TYPE_OP = 7'b0100011;
+parameter L_TYPE_OP = 7'b0000011;
+
 
 parameter ADD = 3'b000;  //ADD performs the addition of rs1 and rs2. Overflows are ignored and the low XLEN bits of results are written to rd.
 parameter SUB = 3'b000; //SUB performs the subtraction of rs1 and rs2. Overflows are ignored and the low XLEN bits of results are written to rd.
@@ -46,6 +55,14 @@ parameter SLTU = 3'b011;
 parameter SRA = 3'b101; //SRA perform arithmetic (aka signed) right shift on the value in reg rs1 by the shift amount held in the lower 5 bits of reg rs2.
 parameter SRL = 3'b101; //SRL perform logical (aka unsigned) right shift on the value in rs1 by the shift amount held in the lower 5 bits of rs2.
 parameter XOR = 3'b100; //XOR performs bitwise exclusive or on rs1 and 'rs2' and the result is written to 'rd'.
+
+parameter BEQ = 3'b000;
+parameter BNE = 3'b001;
+parameter BLT = 3'b100;
+parameter BGE = 3'b101;
+parameter BLTU = 3'b110;
+parameter BGEU = 3'b111;
+
 
 reg [7:0] opcode_alu;
 reg [6:0] rd_add_rf;
@@ -92,7 +109,26 @@ begin
         
           DECODE_STATE:
             begin
-              RF_chip_enable <= 1;              
+
+              RF_chip_enable <= 1;   
+
+              if (instruction[6:0] == J_TYPE_OP)
+               begin
+                PC_offset <= instruction[31:20];
+                pc_jump_enb <= 1;
+                state <= IDLE_STATE;
+
+               end
+
+            /*  if (instruction[6:0] == JALR_TYPE_OP)
+               begin
+                PC_offset <= instruction[31:20];
+                PC_jump_enable <= 1;
+                state <= IDLE_STATE;
+               end */
+
+
+
               case(instruction[14:12])
                 ADD:
                   begin
@@ -133,19 +169,47 @@ begin
             
               RF_write_enable = 0 ;  // Prepare for read 
               //RF_chip_enable <= 1;
-              alu_imm1 <= RF_reg1_data;
               if (instruction[6:0] == I_TYPE_OP)
                 begin
-                    alu_imm2 <= instruction[31:20];
-                    alu_opcode <= opcode_alu;
+                  alu_imm1 <= RF_reg1_data;
+                  alu_imm2 <= instruction[31:20];
+                  alu_opcode <= opcode_alu;
+                  state <= ALU_GET_RESULT;
+                  RF_write_enable <= 1;
+                  pc_jump_enb <= 0;
                 end
+
               if (instruction[6:0] == R_TYPE_OP)
                 begin
-                    alu_imm2 <= RF_reg2_data;
-                    alu_opcode <= opcode_alu;
+                  alu_imm1 <= RF_reg1_data;
+                  alu_imm2 <= RF_reg2_data;
+                  alu_opcode <= opcode_alu;
+                  state <= ALU_GET_RESULT;
+                  RF_write_enable <= 1;
+                  pc_jump_enb <= 0;
                 end
-              state <= ALU_GET_RESULT;
-              RF_write_enable <= 1 ;                                               
+
+              if (instruction[6:0] == JALR_TYPE_OP)
+                begin
+                  pc_offset <= RF_reg1_data; //False : JALR MEANS PC = RS1 + IMM, NEED TO FIX
+                  state <= IDLE_STATE;
+                  pc_jump_enb <= 1;
+                end
+              
+              if (instruction[6:0] == B_TYPE_OP)
+                begin
+                  case(instruction[14:12])
+                    BEQ : if ({RF_reg1_data[31], RF_reg1_data} == {RF_reg2_data[31], RF_reg2_data}) pc_offset = pc_offset + (instruction[31]>>12 + instruction[7]>>11 + instruction[30:25]>>6 + instruction[8:11]);
+                    BNE : if ({RF_reg1_data[31], RF_reg1_data} != {RF_reg2_data[31], RF_reg2_data}) pc_offset = pc_offset + (instruction[31]>>12 + instruction[7]>>11 + instruction[30:25]>>6 + instruction[8:11]);
+                    BLT : if ({RF_reg1_data[31], RF_reg1_data} < {RF_reg2_data[31], RF_reg2_data}) pc_offset = pc_offset + (instruction[31]>>12 + instruction[7]>>11 + instruction[30:25]>>6 + instruction[8:11]);
+                    BGE : if ({RF_reg1_data[31], RF_reg1_data} >= {RF_reg2_data[31], RF_reg2_data}) pc_offset = pc_offset + (instruction[31]>>12 + instruction[7]>>11 + instruction[30:25]>>6 + instruction[8:11]);
+                    BLTU : if (RF_reg1_data < RF_reg2_data) pc_offset = pc_offset + (instruction[31]>>12 + instruction[7]>>11 + instruction[30:25]>>6 + instruction[8:11]);
+                    BGEU : if (RF_reg1_data >= RF_reg2_data) pc_offset = pc_offset + (instruction[31]>>12 + instruction[7]>>11 + instruction[30:25]>>6 + instruction[8:11]);                                  
+                  endcase
+                  state <= IDLE_STATE;
+                  pc_jump_enb <= 1;              
+                end             
+                                            
             end 
             
           ALU_GET_RESULT: 
