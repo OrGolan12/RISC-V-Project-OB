@@ -25,14 +25,17 @@ module decode (
     output reg [4:0]  RF_WR_add,
     output reg [31:0] RF_WriteData, 
 
-    output reg [31:0] pc_offset,
-    output reg pc_jump_enb
+    //PC
+    input [31:0] pc_counter,
+    output reg [12:0] pc_offset,
+    output reg [31:0] pc_jump_address,
+    output reg pc_absolute_flag
 );
 
 parameter IDLE_STATE                  = 3'b000;
 parameter DECODE_STATE                = 3'b001;
 parameter REGFILE_READ_SRC_REGS_STATE = 3'b010;
-parameter ALU_GET_RESULT              = 3'b011;
+parameter REGFILE_WRITE              = 3'b011;
 
 reg [2:0] state ;
 
@@ -70,6 +73,7 @@ reg [31:0] cycle_counter;
 reg [31:0] instr_counter;
 reg [31:0] instruction; 
 reg [31:0] alu_result_latch;
+reg [12:0] b_type_immidiate;
  
 always@ (posedge clk)
 begin
@@ -105,29 +109,14 @@ begin
                 instr_counter <= instr_counter + 1 ;
                 decoder_rdy_bsy  <= 0 ; 
                 RF_chip_enable <= 0; 
+                pc_offset <= 0;
+                b_type_immidiate <=0;
             end
         
           DECODE_STATE:
             begin
 
               RF_chip_enable <= 1;   
-
-              if (instruction[6:0] == J_TYPE_OP)
-               begin
-                PC_offset <= instruction[31:20];
-                pc_jump_enb <= 1;
-                state <= IDLE_STATE;
-
-               end
-
-            /*  if (instruction[6:0] == JALR_TYPE_OP)
-               begin
-                PC_offset <= instruction[31:20];
-                PC_jump_enable <= 1;
-                state <= IDLE_STATE;
-               end */
-
-
 
               case(instruction[14:12])
                 ADD:
@@ -150,76 +139,129 @@ begin
                begin
                  rd_add_rf <= instruction[11:7];
                  RF_rs1_address <= instruction[19:15];
-                 RF_rs2_address <= instruction[24:20];    
+                 RF_rs2_address <= instruction[24:20];
+                 state <= REGFILE_READ_SRC_REGS_STATE;      
                end
              
              if (instruction[6:0] == I_TYPE_OP)
                begin
                  rd_add_rf <= instruction[11:7];
                  RF_rs1_address <= instruction[19:15];
-                 //alu_imm2 <= instruction[31:20];
-               end                           
+                 state <= REGFILE_READ_SRC_REGS_STATE;
+               end  
 
-              state <= REGFILE_READ_SRC_REGS_STATE;
-               
+             if (instruction[6:0] == J_TYPE_OP)
+               begin
+                 rd_add_rf <= instruction[11:7];
+                 state <= REGFILE_WRITE;   
+               end                         
+
+             if (instruction[6:0] == JALR_TYPE_OP)
+               begin
+                 rd_add_rf <= instruction[11:7];
+                 RF_rs1_address <= instruction[19:15];
+                 state <= REGFILE_READ_SRC_REGS_STATE;
+               end
+
+             if (instruction[6:0] == B_TYPE_OP)
+               begin
+                 RF_rs1_address <= instruction[19:15];
+                 RF_rs2_address <= instruction[24:20];
+                 state <= REGFILE_READ_SRC_REGS_STATE;
+                 b_type_immidiate <= (((instruction[31]<<12) + (instruction[7]<<11) + (instruction[30:25]<<6) + (instruction[11:8])) << 1);
+               end                           
             end
 
           REGFILE_READ_SRC_REGS_STATE:
             begin
-            
+              
               RF_write_enable = 0 ;  // Prepare for read 
               //RF_chip_enable <= 1;
               if (instruction[6:0] == I_TYPE_OP)
                 begin
                   alu_imm1 <= RF_reg1_data;
                   alu_imm2 <= instruction[31:20];
-                  alu_opcode <= opcode_alu;
-                  state <= ALU_GET_RESULT;
+                  alu_opcode <= opcode_alu;               
                   RF_write_enable <= 1;
-                  pc_jump_enb <= 0;
+                  pc_absolute_flag <= 0;
+                  //pc_offset <= 4;
+                  state <= REGFILE_WRITE;
                 end
 
-              if (instruction[6:0] == R_TYPE_OP)
+              else if (instruction[6:0] == R_TYPE_OP)
                 begin
                   alu_imm1 <= RF_reg1_data;
                   alu_imm2 <= RF_reg2_data;
-                  alu_opcode <= opcode_alu;
-                  state <= ALU_GET_RESULT;
+                  alu_opcode <= opcode_alu;                 
                   RF_write_enable <= 1;
-                  pc_jump_enb <= 0;
+                  pc_absolute_flag <= 0;
+                  //pc_offset <= 4;
+                  state <= REGFILE_WRITE;
                 end
 
-              if (instruction[6:0] == JALR_TYPE_OP)
-                begin
-                  pc_offset <= RF_reg1_data; //False : JALR MEANS PC = RS1 + IMM, NEED TO FIX
-                  state <= IDLE_STATE;
-                  pc_jump_enb <= 1;
+              else if (instruction[6:0] == JALR_TYPE_OP)
+                begin                  
+                  pc_jump_address <= RF_reg1_data + instruction[31:20];                   
+                  pc_absolute_flag <= 1;
+                  state <= REGFILE_WRITE;
                 end
               
+
               if (instruction[6:0] == B_TYPE_OP)
                 begin
+                  
                   case(instruction[14:12])
-                    BEQ : if ({RF_reg1_data[31], RF_reg1_data} == {RF_reg2_data[31], RF_reg2_data}) pc_offset = pc_offset + (instruction[31]>>12 + instruction[7]>>11 + instruction[30:25]>>6 + instruction[8:11]);
-                    BNE : if ({RF_reg1_data[31], RF_reg1_data} != {RF_reg2_data[31], RF_reg2_data}) pc_offset = pc_offset + (instruction[31]>>12 + instruction[7]>>11 + instruction[30:25]>>6 + instruction[8:11]);
-                    BLT : if ({RF_reg1_data[31], RF_reg1_data} < {RF_reg2_data[31], RF_reg2_data}) pc_offset = pc_offset + (instruction[31]>>12 + instruction[7]>>11 + instruction[30:25]>>6 + instruction[8:11]);
-                    BGE : if ({RF_reg1_data[31], RF_reg1_data} >= {RF_reg2_data[31], RF_reg2_data}) pc_offset = pc_offset + (instruction[31]>>12 + instruction[7]>>11 + instruction[30:25]>>6 + instruction[8:11]);
-                    BLTU : if (RF_reg1_data < RF_reg2_data) pc_offset = pc_offset + (instruction[31]>>12 + instruction[7]>>11 + instruction[30:25]>>6 + instruction[8:11]);
-                    BGEU : if (RF_reg1_data >= RF_reg2_data) pc_offset = pc_offset + (instruction[31]>>12 + instruction[7]>>11 + instruction[30:25]>>6 + instruction[8:11]);                                  
+                    BEQ : if (RF_reg1_data == RF_reg2_data) pc_offset <= b_type_immidiate;//((instruction[31]<<12 + instruction[7]<<11 + instruction[30:25]<<6 + instruction[11:8]) << 1);
+                    BNE : if (RF_reg1_data != RF_reg2_data) pc_offset <= b_type_immidiate;
+                    BLT : if ($signed(RF_reg1_data) < $signed(RF_reg2_data)) pc_offset <= b_type_immidiate;
+                    BGE : if ($signed(RF_reg1_data) >= $signed(RF_reg2_data)) pc_offset <= b_type_immidiate;
+                    BLTU : if (RF_reg1_data < RF_reg2_data) pc_offset <= b_type_immidiate;
+                    BGEU : if (RF_reg1_data >= RF_reg2_data) pc_offset <= b_type_immidiate;                                  
                   endcase
-                  state <= IDLE_STATE;
-                  pc_jump_enb <= 1;              
+                  pc_absolute_flag <= 0;
+                  state <= IDLE_STATE;           
                 end             
                                             
             end 
             
-          ALU_GET_RESULT: 
-            begin 
-              RF_WriteData <= alu_result;
-              RF_WR_add    <= rd_add_rf;
+          //ALU_GET_RESULT: 
+            //begin 
+              //RF_WriteData <= alu_result;
+              //RF_WR_add    <= rd_add_rf;
               //RF_write_enable <= 1 ;
-              RF_chip_enable  <= 1;
-              state <= IDLE_STATE ; 
-            end
+              //RF_chip_enable  <= 1;
+             // state <= REGFILE_WRITE ; 
+          //  end
+
+          REGFILE_WRITE:
+              begin
+                //RF_WR_add <= rd_add_rf;
+                RF_write_enable = 1 ; //prepare for write               
+                RF_chip_enable  <= 1;
+
+                if ((instruction[6:0] == R_TYPE_OP) | (instruction[6:0] == I_TYPE_OP))
+                  begin                    
+                    RF_WR_add <= rd_add_rf;
+                    RF_WriteData <= alu_result;
+                    pc_offset <= 4;
+                    state <= IDLE_STATE;
+                  end
+                
+                if (instruction[6:0] == J_TYPE_OP)
+                  begin                    
+                    RF_WR_add <= rd_add_rf;
+                    RF_WriteData <= pc_counter + 4;
+                    state <= IDLE_STATE;
+                  end
+                
+                if (instruction[6:0] == JALR_TYPE_OP)
+                  begin
+                    RF_WR_add <= rd_add_rf;
+                    RF_WriteData <= pc_counter + 4;
+                    state <= IDLE_STATE;
+                  end               
+
+              end
         endcase        
     end   
 end
