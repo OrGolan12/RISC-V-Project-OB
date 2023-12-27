@@ -43,6 +43,12 @@ wire [4:0] RF_rs2_address;
 wire [4:0] RF_WR_add;
 wire [31:0] RF_WriteData; 
 
+//pc wires
+wire pc_absolute_flag;
+wire [31:0] pc_jump_address;
+wire [12:0] pc_offset;
+wire [31:0] pc_counter; 
+
 
 //decoder_wires            
 wire [31:0] instruction_data;
@@ -55,9 +61,9 @@ RF_rs2_address, RF_reg2_data, RF_WR_add, RF_WriteData);
 
 decode d(cpu_rst, cpu_clk, cpu_instruction, instruction_RDY_BSY, decoder_rdy_bsy, alu_result, alu_opcode, 
 alu_imm1, alu_imm2, RF_chip_enable, RF_write_enable, RF_reg1_data, RF_reg2_data, 
-RF_rs1_address, RF_rs2_address, RF_WR_add, RF_WriteData);
+RF_rs1_address, RF_rs2_address, RF_WR_add, RF_WriteData, pc_counter, pc_offset, pc_jump_address, pc_absolute_flag);
         
-    
+PC p(cpu_rst, cpu_clk, pc_absolute_flag, pc_jump_address, pc_offset, pc_counter);    
 endmodule
 
 
