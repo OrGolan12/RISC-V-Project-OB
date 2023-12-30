@@ -10,7 +10,7 @@ module RAM(
     output [31:0] RAM_out
     );
     
-reg [7:0] mem [63:0];
+reg [7:0] mem [8191:0];
 reg [31:0] temp;
 
 integer i;
