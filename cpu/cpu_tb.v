@@ -143,6 +143,14 @@ function [31:0] rtype_cmd;
     end                                              
 endfunction
 
+function [31:0] jtype_cmd;
+  input [19:0] immediate;
+  input [4:0] rd;
+
+  jtype_cmd = (J_TYPE_OP + (rd<<7) +(immediate[18:11] << 12) + (immediate[10]  << 20) + (immediate[9:0] << 21) + (immediate[19] << 31));  
+
+endfunction
+
 function [31:0] btype_cmd;
   input [2:0] command;
   input [4:0] rs1;
@@ -161,9 +169,16 @@ function [31:0] btype_cmd;
   end 
 endfunction
 
+function [31:0] jaltype_cmd;
+  input [11:0] imm;
+  input [4:0] rs1;
+  input [4:0] rd;
 
+  jaltype_cmd = ((JALR_TYPE_OP) + (rd<<7) + (rs1<<15) + (imm<<20));
 
-  initial 
+endfunction
+
+initial 
     begin
 
         $dumpfile("cpu_tb.vcd");
@@ -198,6 +213,19 @@ endfunction
         //OPCODE : BEQ
         cpu_instruction = btype_cmd(BEQ,5'b00010,5'b00100,12'b1);//PC should be pc += 2. overall : 18 
         #100
+        //TESTING PC  -----BEQ FUNCTION----- 
+        if (DUT.p.pc_counter != 32'd18) $error("Expected PC to be %0d but got %2d", 5'd14, DUT.p.pc_counter);//CHECK IF PC == 18;        
+        cpu_instruction = btype_cmd(BNE,5'b00000,5'b00100,12'b10);//PC should be pc += 4. //overall : ?
+        #80
+        cpu_instruction = btype_cmd(BLT,5'b00000,5'b00100,12'b1);//PC should be pc += 2. overall : 20 
+        #80
+        cpu_instruction = btype_cmd(BGE,5'b00100,5'b00000,12'b10);//PC should be pc += 4. overall : 20 
+        #80
+        //cpu_instruction = btype_cmd(BLTU,5'b00100,5'b00000,12'b10);//Continue...
+        cpu_instruction = jtype_cmd(20'd17, 5'b00100);
+        #80
+        cpu_instruction = jaltype_cmd(12'h5, 5'b00001, 5'b110);
+
         //TESTING THE REGISTERS  -----ADD FUNCTION-----   
         if (DUT.r.reg_mem[0] != 32'b000) $error("Expected REG%02d to be %0d but got %08x", 0, 32'b101, DUT.r.reg_mem[0]);//CHECK IF REG0 == 0
         if (DUT.r.reg_mem[1] != 32'b101) $error("Expected REG%02d to be %0d but got %08x", 1, 32'b101, DUT.r.reg_mem[1]);//CHECK IF REG1 == 5
@@ -207,7 +235,10 @@ endfunction
         //TESTING THE REGISTERS  -----AND FUNCTION-----  
         if (DUT.r.reg_mem[4] != (DUT.r.reg_mem[2] & DUT.r.reg_mem[3])) $error("Expected REG%04d to be %0d but got %08x", 4, (DUT.r.reg_mem[2] & DUT.r.reg_mem[3]), DUT.r.reg_mem[4]);//CHECK IF REG4 == REG2 AND REG3
         //TESTING PC  -----BEQ FUNCTION-----  
-        if (DUT.p.pc_counter != 32'd18) $error("Expected REG%02d to be %0d but got %08x", 3'b101 , 5'd14, DUT.p.pc_counter);//CHECK IF PC == 18;
+        //if (DUT.p.pc_counter != 32'd18) $error("Expected PC to be %0d but got %x", 5'd14, DUT.p.pc_counter);//CHECK IF PC == 18;
+        //if (DUT.p.pc_counter != 32'd20) $error("Expected PC to be %0d but got %08x", 3'b101 , 5'd14, DUT.p.pc_counter);//CHECK IF PC == 20;
+        //TESTING PC  -----BEQ FUNCTION-----  
+
         //can add more tests
         $dumpfile("cpu_tb.vcd");
         $dumpvars(0, cpu_tb);
