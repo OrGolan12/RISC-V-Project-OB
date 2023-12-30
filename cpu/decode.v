@@ -74,6 +74,7 @@ reg [31:0] instr_counter;
 reg [31:0] instruction; 
 reg [31:0] alu_result_latch;
 reg [12:0] b_type_immidiate;
+reg [12:0] j_type_immediate;
  
 always@ (posedge clk)
 begin
@@ -153,7 +154,8 @@ begin
              if (instruction[6:0] == J_TYPE_OP)
                begin
                  rd_add_rf <= instruction[11:7];
-                 state <= REGFILE_WRITE;   
+                 state <= REGFILE_WRITE; 
+                 j_type_immediate <= (((instruction[30:21]) + (instruction[20]<<10) + (instruction[19:12]<<11) + (instruction[31]<<20))<< 1);  
                end                         
 
              if (instruction[6:0] == JALR_TYPE_OP)
@@ -251,6 +253,7 @@ begin
                   begin                    
                     RF_WR_add <= rd_add_rf;
                     RF_WriteData <= pc_counter + 4;
+                    pc_offset <= j_type_immediate; 
                     state <= IDLE_STATE;
                   end
                 
