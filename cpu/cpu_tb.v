@@ -169,12 +169,12 @@ function [31:0] btype_cmd;
   end 
 endfunction
 
-function [31:0] jaltype_cmd;
+function [31:0] jalrtype_cmd;
   input [11:0] imm;
   input [4:0] rs1;
   input [4:0] rd;
 
-  jaltype_cmd = ((JALR_TYPE_OP) + (rd<<7) + (rs1<<15) + (imm<<20));
+  jalrtype_cmd = ((JALR_TYPE_OP) + (rd<<7) + (rs1<<15) + (imm<<20));
 
 endfunction
 
@@ -222,9 +222,9 @@ initial
         cpu_instruction = btype_cmd(BGE,5'b00100,5'b00000,12'b10);//PC should be pc += 4. overall : 20 
         #80
         //cpu_instruction = btype_cmd(BLTU,5'b00100,5'b00000,12'b10);//Continue...
-        cpu_instruction = jtype_cmd(20'd17, 5'b00100);
+        cpu_instruction = jtype_cmd(20'd17, 5'b1000);
         #80
-        cpu_instruction = jaltype_cmd(12'h5, 5'b00001, 5'b110);
+        cpu_instruction = jalrtype_cmd(12'h5, 5'b00001, 5'b1001);
 
         //TESTING THE REGISTERS  -----ADD FUNCTION-----   
         if (DUT.r.reg_mem[0] != 32'b000) $error("Expected REG%02d to be %0d but got %08x", 0, 32'b101, DUT.r.reg_mem[0]);//CHECK IF REG0 == 0
